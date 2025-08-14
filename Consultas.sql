@@ -44,15 +44,30 @@ from customer
 join invoice i on c.customerid = i.invoiceid
 
 
-
+ 
 -- TotalGastoCliente(ClienteID, Anio): Calcula el gasto total de un cliente en un año específico.
 DELIMITER $$
-CREATE FUNCTION TotalGastoCliente(ClienteId, Anio) RETURNS ClienteId
+
+CREATE FUNCTION TotalGastoCliente(
+    p_ClienteId INT,
+    p_Anio INT
+) RETURNS DECIMAL(10,2)
+DETERMINISTIC
 BEGIN
-	
-    RETURN valor;
+    DECLARE total DECIMAL(10,2);
+
+    SELECT IFNULL(SUM(Total), 0)
+    INTO total
+    FROM Invoice
+    WHERE CustomerId = p_ClienteId
+      AND YEAR(InvoiceDate) = p_Anio;
+
+    RETURN total;
 END$$
+
 DELIMITER ;
+
+SELECT TotalGastoCliente(5, 2020) AS GastoTotal;
 
 
 CREATE EVENT recordatorio_fin_ano
@@ -60,7 +75,24 @@ ON SCHEDULE AT '2026-01-01 12:00:00'
 DO
 UPDATE Employee SET salario = salario + 100 WHERE puesto = 'Analista';
 
+DELIMITER //
+
 CREATE EVENT ReporteVentasMensual
-ON SCHEDULE AT 1 MONTH
+ON SCHEDULE EVERY 1 MONTH
+STARTS CURRENT_TIMESTAMP
 DO
-	UPDATE Invoice set venta = 
+BEGIN
+    UPDATE ReporteVentas
+    SET venta_mensual = (
+        SELECT SUM(total)
+        FROM Invoice
+        WHERE MONTH(Fecha) = MONTH(CURRENT_DATE - INTERVAL 1 MONTH)
+          AND YEAR(Fecha) = YEAR(CURRENT_DATE - INTERVAL 1 MONTH)
+    )
+    WHERE anio = YEAR(CURRENT_DATE - INTERVAL 1 MONTH)
+      AND mes = MONTH(CURRENT_DATE - INTERVAL 1 MONTH);
+END//
+
+DELIMITER ;
+
+
