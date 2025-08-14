@@ -38,6 +38,11 @@ join Track t on e.EmployeeId = t.TrackId
 WHERE g.name = "Rock"
 LIMIT 5;
 
+-- Encuentra el cliente que ha realizado la compra más cara en el último año.
+SELECT i.invoiceid, c.firstname
+from customer
+join invoice i on c.customerid = i.invoiceid
+
 
 
 -- TotalGastoCliente(ClienteID, Anio): Calcula el gasto total de un cliente en un año específico.
